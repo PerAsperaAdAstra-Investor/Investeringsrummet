@@ -1,11 +1,4 @@
-import yaml
-import os
 from stripe_config import create_checkout_session
-
-# Ladda config.yaml
-config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
-with open(config_path) as file:
-    config = yaml.safe_load(file)
 import streamlit as st
 from PIL import Image
 from datetime import datetime, timedelta
@@ -61,8 +54,7 @@ if 'account_type' not in st.session_state:
 
 # Sätt kontotyp baserat på inloggning
 if st.session_state.get('user_logged_in'):
-    username = "david"  # Eller hämta dynamiskt från authenticator
-    st.session_state['account_type'] = config["credentials"]["usernames"][username].get("account_type", "free")
+    username = "david"
 
 if 'analysis_log' not in st.session_state:
     st.session_state['analysis_log'] = []
