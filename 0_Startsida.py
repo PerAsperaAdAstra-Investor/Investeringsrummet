@@ -188,4 +188,14 @@ else:
     st.markdown("- 🔒 **Värderingskalkylator** *(Premium)*  \n  Logga in för att få tillgång till DCF och multipelmodeller.")
 
 st.markdown("---")
+# Lägg till metataggen i HTML
+st.markdown("""
+    <meta name="google-site-verification" content="ca-pub-2743929577264944">
+""", unsafe_allow_html=True)
+
+
+
+
+
+
 st.markdown("🛠️ **Alla verktyg utom värderingskalkylatorn är gratis att använda!** Logga in för att låsa upp premiumfunktioner.")
