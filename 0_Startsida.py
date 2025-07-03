@@ -192,10 +192,7 @@ st.markdown("---")
 st.markdown("""
     <meta name="google-site-verification" content="ca-pub-2743929577264944">
 """, unsafe_allow_html=True)
-
-
-
-
-
+st.markdown("testhhbhbhbhbhbhbhbhbhb.")
+st.markdown("---")
 
 st.markdown("🛠️ **Alla verktyg utom värderingskalkylatorn är gratis att använda!** Logga in för att låsa upp premiumfunktioner.")
