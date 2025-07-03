@@ -1,0 +1,14 @@
+credentials:
+  usernames:
+    david:
+      name: David Nordström
+      password: '123'  # använd `stauth.Hasher(['123']).generate()` för riktig hashning
+
+cookie:
+  name: some_cookie_name
+  key: some_random_key
+  expiry_days: 30
+
+preauthorized:
+  emails:
+    - david@example.com
