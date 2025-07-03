@@ -2,7 +2,8 @@ credentials:
   usernames:
     david:
       name: David Nordström
-      password: '123'  # använd `stauth.Hasher(['123']).generate()` för riktig hashning
+      password: '$2b$12$zV7EQNzC2ZcU2o1FAssX1edRSpJfHZBdjHvwYCtGgfd6.f8d92vwO'  # använd `stauth.Hasher(['123']).generate()` för riktig hashning
+      account_type: free
 
 cookie:
   name: some_cookie_name
@@ -10,5 +11,4 @@ cookie:
   expiry_days: 30
 
 preauthorized:
-  emails:
-    - david@example.com
+  emails: []

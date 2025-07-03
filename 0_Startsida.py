@@ -3,6 +3,39 @@ from PIL import Image
 import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
+from datetime import datetime, timedelta
+
+import streamlit as st
+from firebase_config import auth
+
+st.title("Investeringsrummet 🔐")
+
+choice = st.radio("Login eller Registrera", ["Login", "Registrera"])
+
+email = st.text_input("Email")
+password = st.text_input("Lösenord", type="password")
+
+if choice == "Registrera":
+    if st.button("Registrera"):
+        try:
+            user = auth.create_user_with_email_and_password(email, password)
+            st.success("Konto skapat! Du kan nu logga in.")
+        except Exception as e:
+            st.error(f"Fel vid registrering: {e}")
+elif choice == "Login":
+    if st.button("Logga in"):
+        try:
+            user = auth.sign_in_with_email_and_password(email, password)
+            st.success(f"Inloggad som {email}")
+            st.session_state["user_logged_in"] = True
+            st.session_state["user_email"] = email
+            st.session_state["account_type"] = "free"
+        except Exception as e:
+            st.error(f"Fel vid inloggning: {e}")
+
+
+
+
 
 with open("config.yaml") as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -14,14 +47,12 @@ authenticator = stauth.Authenticate(
     config["cookie"]["expiry_days"],
 )
 
-name, authentication_status, username = authenticator.login("Logga in", "sidebar")
 
-if authentication_status == False:
-    st.error("Fel användarnamn eller lösenord")
-if authentication_status == None:
-    st.warning("Vänligen logga in för att använda alla funktioner")
 
 st.set_page_config(page_title="Investeringsrummet", layout="wide")
+
+st.image("Assets/test.png", width=80)
+
 
 # ------------------------
 # Hero Section
@@ -30,13 +61,48 @@ st.markdown("""
     <div style='text-align: center; padding-top: 30px;'>
         <h1 style='font-size: 3em;'>📈 Investeringsrummet</h1>
         <p style='font-size: 1.2em;'>Datadrivna aktievärderingar med hjälp av Multipel- och DCF-modeller</p>
-        <a href='#start-cta'>
-            <button style='font-size: 1.1em; padding: 10px 25px; background-color: #0072E3; color: white; border: none; border-radius: 5px;'>🚀 Starta din första analys</button>
-        </a>
+""", unsafe_allow_html=True)
+# Lägg till möjlighet till registrering
+try:
+    if authenticator.register_user('Registrera konto', location='main', preauthorization=False):
+        st.success("Användare registrerad! Logga in med dina nya uppgifter.")
+except Exception as e:
+    st.error(e)
+
+
+# Hantera inloggningstillstånd via session_state
+if 'user_logged_in' not in st.session_state:
+    st.session_state['user_logged_in'] = False
+
+if 'account_type' not in st.session_state:
+    st.session_state['account_type'] = None
+
+# Sätt kontotyp baserat på inloggning
+if st.session_state.get('user_logged_in'):
+    username = "david"  # Eller hämta dynamiskt från authenticator
+    st.session_state['account_type'] = config["credentials"]["usernames"][username].get("account_type", "free")
+
+if 'analysis_log' not in st.session_state:
+    st.session_state['analysis_log'] = []
+
+if st.session_state.get('account_type') == 'premium':
+    if st.button("🚀 Starta analys"):
+        st.success("Analys startad!")
+        st.markdown("Länk till analysverktyget...")
+elif st.session_state.get('user_logged_in'):
+    st.warning("🔒 Denna funktion är endast tillgänglig för Premium-användare.")
+    if st.button("Uppgradera till Premium"):
+        st.info("👉 Uppgraderingsfunktion kommer snart!")
+else:
+    st.warning("🔑 Logga in för att komma åt analysverktyget.")
+
+st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
 st.markdown("---")
+
+st.success("🎯 Vill du komma igång direkt? Gå till 'Värderingskalkylator' i menyn till vänster för att starta din analys!")
 
 # ------------------------
 # Funktioner
@@ -70,17 +136,23 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("💎 Gratismodell")
     st.markdown("""
-    ✅ 1 gratis analys per vecka  
-    ✅ Tillgång till historisk data  
-    ✅ Export till PDF
+    ✅ Tillgång till alla verktyg (utom 'Min portfölj')  
+    ✅ Export till PDF  
+    ✅ Tillgång till historisk aktiedata
     """)
 with col2:
     st.subheader("🚀 Premium")
     st.markdown("""
     ✅ Obegränsade analyser  
     ✅ Jämför flera bolag  
-    ✅ Tillgång till alla framtida funktioner
+    ✅ Tillgång till alla framtida funktioner  
+    ✅ Tillgång till 'Min portfölj'
     """)
+
+if st.session_state.get('account_type') == 'premium':
+    st.info("Du har **Premium**-åtkomst 🎉")
+elif st.session_state.get('account_type') == 'free':
+    st.info("Du använder **Gratismodellen** – uppgradera för mer funktioner 🚀")
 
 st.success("🎁 Du får alltid 1 gratis analys varje månad! Logga bara in.")
 
@@ -130,7 +202,7 @@ st.markdown("""
   Få en översikt över dina egna innehav och analysera dem visuellt och historiskt.
 """)
 
-if authentication_status:
+if st.session_state.get('user_logged_in'):
     st.markdown("- 📈 **Värderingskalkylator**  *(Premium)*  \n  Tillgång till DCF och multipelmodeller med egna antaganden.")
 else:
     st.markdown("- 🔒 **Värderingskalkylator** *(Premium)*  \n  Logga in för att få tillgång till DCF och multipelmodeller.")

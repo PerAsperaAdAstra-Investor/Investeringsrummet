@@ -1,10 +1,34 @@
+
 import streamlit as st
 import yfinance as yf
 import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.graph_objects as go
 from utils.name_to_ticker import name_to_ticker
 from forex_python.converter import CurrencyRates
 #from yahooquery import Ticker as YQ_Ticker
+
+# ==================== AUTHENTICATION ====================
+from streamlit_authenticator import Authenticate
+import yaml
+from yaml.loader import SafeLoader
+
+with open('./config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['preauthorized']
+)
+
+name, authentication_status, username = authenticator.login(location="main", form_name="Logga in")
+# Säkerställ att endast inloggade användare kommer åt sidan
+if st.session_state["authentication_status"] != True:
+    st.warning("Du måste vara inloggad för att använda värderingskalkylatorn.")
+    st.stop()
 
 # =============================================================================
 # 📊 VÄRDERINGSKALKYLATOR
@@ -56,21 +80,28 @@ if ticker:
         currency = info.get("currency", "USD")
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("<div style='background-color:#111; padding:1rem; border-radius:8px;'>", unsafe_allow_html=True)
-            st.metric("Aktiepris", f"{info['currentPrice']} {info['currency']}")
-            if earnings_date:
-                st.caption(f"Senaste rapport: {earnings_date}")
-            st.metric("Börsvärde", f"{round(info['marketCap'] / 1e9, 2)} B")
-            st.metric("P/E", info.get("trailingPE", "-"))
-            st.metric("Utdelning (%)", info.get("dividendYield", 0))
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style='background-color:#111; padding:0.5rem 1rem; border-radius:6px; font-size:0.85rem; color:white'>
+                    <b>Aktiepris:</b> {info['currentPrice']} {info['currency']}<br>
+                    <b>Börsvärde:</b> {round(info['marketCap'] / 1e9, 1)} B<br>
+                    <b>P/E:</b> {info.get("trailingPE", "-")}<br>
+                    <b>Utdelning:</b> {round(info.get("dividendYield", 0) * 100, 2)}%
+                </div>
+                """, unsafe_allow_html=True
+            )
+
         with col2:
-            st.markdown("<div style='background-color:#111; padding:1rem; border-radius:8px;'>", unsafe_allow_html=True)
-            st.metric("Sektor", info.get("sector", "-"))
-            st.metric("Bransch", info.get("industry", "-"))
-            st.metric("P/S", info.get("priceToSalesTrailing12Months", "-"))
-            st.metric("Beta", info.get("beta", "-"))
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style='background-color:#111; padding:0.5rem 1rem; border-radius:6px; font-size:0.85rem; color:white'>
+                    <b>Sektor:</b> {info.get("sector", "-")}<br>
+                    <b>Bransch:</b> {info.get("industry", "-")}<br>
+                    <b>P/S:</b> {round(info.get("priceToSalesTrailing12Months", 0), 2)}<br>
+                    <b>Beta:</b> {info.get("beta", "-")}
+                </div>
+                """, unsafe_allow_html=True
+            )
     except Exception as e:
         st.error(f"Fel vid hämtning: {e}")
     st.subheader(f"📈 {ticker} – Historisk prisutveckling")
@@ -105,46 +136,155 @@ if ticker:
 
         with col1:
             if revenue is not None and net_income is not None:
-                fig1, ax1 = plt.subplots(figsize=(5, 3))
-                fig1.patch.set_facecolor('#0e1117')
-                ax1.set_facecolor('#0e1117')
-                ax1.bar(revenue.index.year - 0.2, revenue.values / 1e9, width=0.4, label="Omsättning",
-                        color="mediumseagreen")
-                ax1.bar(net_income.index.year + 0.2, net_income.values / 1e9, width=0.4, label="Vinst",
-                        color="gold")
-                ax1.set_title(f"{ticker} – Omsättning & Vinst", color="white")
-                ax1.set_ylabel("Miljarder", color="white")
-                ax1.tick_params(colors='white')
-                ax1.spines[:].set_color("white")
-                ax1.legend()
-                plt.rcParams["font.family"] = "Times New Roman"
-                st.pyplot(fig1)
+                # Ensure full 10-year historical data (not just tail of available data)
+                # Get last 10 years by sorting and slicing, keeping alignment
+                revenue_sorted = revenue.sort_index()
+                net_income_sorted = net_income.sort_index()
+                if len(revenue_sorted) >= 10 and len(net_income_sorted) >= 10:
+                    years = revenue_sorted.index.year[-10:]
+                    revenue_vals = (revenue_sorted / 1e9).values[-10:]
+                    net_income_vals = (net_income_sorted / 1e9).values[-10:]
+                else:
+                    years = revenue_sorted.index.year
+                    revenue_vals = (revenue_sorted / 1e9).values
+                    net_income_vals = (net_income_sorted / 1e9).values
+                fig1 = go.Figure()
+                fig1.add_trace(go.Bar(
+                    x=years - 0.2, y=revenue_vals, name="Omsättning", marker_color='mediumseagreen',
+                    hovertemplate='Omsättning: %{y:.2f} Mdr<br>År: %{x}<extra></extra>'
+                ))
+                fig1.add_trace(go.Bar(
+                    x=years + 0.2, y=net_income_vals, name="Vinst", marker_color='gold',
+                    hovertemplate='Vinst: %{y:.2f} Mdr<br>År: %{x}<extra></extra>'
+                ))
+                fig1.update_layout(
+                    title=f"{ticker} – Omsättning & Vinst (senaste 10 åren)",
+                    barmode='group',
+                    plot_bgcolor='#0e1117',
+                    paper_bgcolor='#0e1117',
+                    font_color='white',
+                    yaxis_title="Miljarder",
+                    hovermode='x unified'
+                )
+                st.plotly_chart(fig1, use_container_width=True)
 
         with col2:
             if div_annual is not None:
-                fig2, ax2 = plt.subplots(figsize=(5, 3))
-                fig2.patch.set_facecolor('#0e1117')
-                ax2.set_facecolor('#0e1117')
-                ax2.bar(div_annual.index.year, div_annual.values, color="mediumslateblue")
-                ax2.set_title(f"{ticker} – Utdelningar per år", color="white")
-                ax2.set_ylabel("Per aktie", color="white")
-                ax2.tick_params(colors='white')
-                ax2.spines[:].set_color("white")
-                st.pyplot(fig2)
+                div_annual_sorted = div_annual.sort_index()
+                years_div = div_annual_sorted.index.year[-10:] if len(div_annual_sorted) >= 10 else div_annual_sorted.index.year
+                div_vals = div_annual_sorted.values[-10:] if len(div_annual_sorted) >= 10 else div_annual_sorted.values
+                fig2 = go.Figure()
+                fig2.add_trace(go.Bar(
+                    x=years_div,
+                    y=div_vals,
+                    marker_color='mediumslateblue',
+                    hoverinfo='y',
+                    hovertemplate='Utdelning: %{y:.2f}<br>År: %{x}<extra></extra>',
+                    name="Utdelning"
+                ))
+                fig2.update_layout(
+                    title=f"{ticker} – Utdelningar per år",
+                    plot_bgcolor='#0e1117',
+                    paper_bgcolor='#0e1117',
+                    font_color='white',
+                    yaxis_title="Per aktie",
+                    hovermode='x unified'
+                )
+                st.plotly_chart(fig2, use_container_width=True)
 
         with col3:
-            if gross_profit is not None and operating_income is not None:
-                fig3, ax3 = plt.subplots(figsize=(5, 3))
-                fig3.patch.set_facecolor('#0e1117')
-                ax3.set_facecolor('#0e1117')
-                ax3.plot(gross_profit.index.year, (gross_profit / revenue * 100), label="Bruttomarginal", color="skyblue")
-                ax3.plot(operating_income.index.year, (operating_income / revenue * 100), label="Rörelsemarginal", color="orange")
-                ax3.set_title("Marginaler (%)", color="white")
-                ax3.set_ylabel("%", color="white")
-                ax3.tick_params(colors='white')
-                ax3.spines[:].set_color("white")
-                ax3.legend()
-                st.pyplot(fig3)
+            if gross_profit is not None and operating_income is not None and revenue is not None:
+                gross_margin = (gross_profit / revenue * 100).sort_index()
+                operating_margin = (operating_income / revenue * 100).sort_index()
+                # Use only last 10 years if possible
+                if len(gross_margin) >= 10:
+                    years_marg = gross_margin.index.year[-10:]
+                    gross_vals = gross_margin.values[-10:]
+                else:
+                    years_marg = gross_margin.index.year
+                    gross_vals = gross_margin.values
+                if len(operating_margin) >= 10:
+                    operating_vals = operating_margin.values[-10:]
+                else:
+                    operating_vals = operating_margin.values
+                fig3 = go.Figure()
+                fig3.add_trace(go.Scatter(
+                    x=years_marg, y=gross_vals, mode='lines+markers',
+                    name="Bruttomarginal", line=dict(color="skyblue"),
+                    hovertemplate='Bruttomarginal: %{y:.2f}%<br>År: %{x}<extra></extra>'
+                ))
+                fig3.add_trace(go.Scatter(
+                    x=years_marg, y=operating_vals, mode='lines+markers',
+                    name="Rörelsemarginal", line=dict(color="orange"),
+                    hovertemplate='Rörelsemarginal: %{y:.2f}%<br>År: %{x}<extra></extra>'
+                ))
+                fig3.update_layout(
+                    title="Marginaler (%)",
+                    plot_bgcolor='#0e1117',
+                    paper_bgcolor='#0e1117',
+                    font_color='white',
+                    yaxis_title="%",
+                    hovermode='x unified'
+                )
+                st.plotly_chart(fig3, use_container_width=True)
+
+        # --- Kassaflödesanalys ---
+        st.markdown("### 💰 Kassaflödesanalys")
+
+        cashflow = stock.cashflow.T
+        cashflow.index = pd.to_datetime(cashflow.index)
+
+        if not cashflow.empty:
+            operating_cf = cashflow["Total Cash From Operating Activities"] if "Total Cash From Operating Activities" in cashflow.columns else None
+            investing_cf = cashflow["Total Cashflows From Investing Activities"] if "Total Cashflows From Investing Activities" in cashflow.columns else None
+            capex = cashflow["Capital Expenditures"] if "Capital Expenditures" in cashflow.columns else None
+
+            if operating_cf is not None and capex is not None:
+                free_cf = operating_cf + capex  # capex är negativt
+
+                # Justera till 10 senaste år
+                operating_cf = operating_cf.sort_index()
+                investing_cf = investing_cf.sort_index()
+                free_cf = free_cf.sort_index()
+
+                years_cf = operating_cf.index.year[-10:] if len(operating_cf) >= 10 else operating_cf.index.year
+                op_vals = (operating_cf / 1e9).values[-10:] if len(operating_cf) >= 10 else (operating_cf / 1e9).values
+                invest_vals = (investing_cf / 1e9).values[-10:] if len(investing_cf) >= 10 else (investing_cf / 1e9).values
+                free_vals = (free_cf / 1e9).values[-10:] if len(free_cf) >= 10 else (free_cf / 1e9).values
+
+                fig_cf = go.Figure()
+                fig_cf.add_trace(go.Bar(
+                    x=years_cf,
+                    y=op_vals,
+                    name="Operativt kassaflöde",
+                    marker_color="lightgreen",
+                    hovertemplate="Operativt: %{y:.2f} Mdr<br>År: %{x}<extra></extra>"
+                ))
+                fig_cf.add_trace(go.Bar(
+                    x=years_cf,
+                    y=invest_vals,
+                    name="Investeringskassaflöde",
+                    marker_color="tomato",
+                    hovertemplate="Investering: %{y:.2f} Mdr<br>År: %{x}<extra></extra>"
+                ))
+                fig_cf.add_trace(go.Scatter(
+                    x=years_cf,
+                    y=free_vals,
+                    mode="lines+markers",
+                    name="Fritt kassaflöde",
+                    line=dict(color="gold"),
+                    hovertemplate="Fritt: %{y:.2f} Mdr<br>År: %{x}<extra></extra>"
+                ))
+                fig_cf.update_layout(
+                    title="Kassaflöden (Miljarder)",
+                    barmode="group",
+                    plot_bgcolor="#0e1117",
+                    paper_bgcolor="#0e1117",
+                    font_color="white",
+                    yaxis_title="Mdr",
+                    hovermode="x unified"
+                )
+                st.plotly_chart(fig_cf, use_container_width=True)
 
         # Nyckeltal från info eller balansräkning
         st.markdown("### 🔍 Nyckeltal")
@@ -171,7 +311,6 @@ if ticker:
             col_e.metric("Räntabilitet totalt kapital (ROA)", f"{roa:.2f}%" if roa else "–")
             col_f.metric("Soliditet", f"{equity_ratio:.2f}%" if equity_ratio else "–")
             st.metric("Eget kapital/aktie", f"{equity_per_share:.2f}" if equity_per_share else "–")
-            st.metric("Direktavkastning", f"{dividend_yield:.2f}%" if dividend_yield else "–")
             st.markdown("</div>", unsafe_allow_html=True)
 
         except Exception as e:
@@ -307,18 +446,40 @@ if ticker:
     # Gemensamt
     current_price = info.get("currentPrice", 100.0)
     sales = info.get("totalRevenue", 3e10) / 1e6
-    shares_outstanding = info.get("sharesOutstanding", 1e9) / 1e6
+    ticker_a = ticker.replace("-B", "-A")
+    ticker_b = ticker
+    stock_a = yf.Ticker(ticker_a)
+    stock_b = yf.Ticker(ticker_b)
+
+    shares_a = stock_a.info.get("sharesOutstanding", 0)
+    shares_b = stock_b.info.get("sharesOutstanding", 0)
+
+    # Om båda är 0 (fel i API), fallback till original
+    if shares_a == 0 and shares_b == 0:
+        shares_outstanding = info.get("sharesOutstanding", 1e9) / 1e6
+    else:
+        shares_outstanding = (shares_a + shares_b) / 1e6  # i miljoner
 
 
     # --- VÄRDERINGSKALKYLATOR ---
 
     def intrinsic_value(growth, margin, pe, years, required_return):
-        earnings = convert(sales, from_currency=currency, to_currency="USD") * ((1 + growth / 100) ** years) * (margin / 100)
-        terminal_value = earnings * pe
+        # Steg 1: Prognostisera framtida omsättning
+        future_sales = convert(sales, from_currency=currency, to_currency="USD") * ((1 + growth / 100) ** years)
+        future_earnings = future_sales * (margin / 100)
+
+        # Steg 2: Terminalvärde = framtida vinst * multipel
+        terminal_value = future_earnings * pe
+
+        # Steg 3: Diskontera terminalvärdet till idag
         discount_factor = (1 + required_return / 100) ** years
-        value = terminal_value / discount_factor
-        # converted_value = convert(value, from_currency="USD", to_currency=currency)  # Already converted sales to USD above
-        return value / shares_outstanding
+        discounted_terminal_value = terminal_value / discount_factor
+
+        # Steg 4: Värde per aktie
+        per_share_value = discounted_terminal_value / shares_outstanding
+
+        # DEBUG OUTPUT
+        return per_share_value
 
     values = {
         "Låg": intrinsic_value(rev_growth_low, profit_margin_low, pe_low, forecast_years, req_return),
