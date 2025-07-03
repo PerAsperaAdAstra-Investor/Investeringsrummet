@@ -1,14 +1,34 @@
 import streamlit as st
 from PIL import Image
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
 
-st.set_page_config(page_title="Aktievärderingsportalen", layout="wide")
+with open("config.yaml") as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+authenticator = stauth.Authenticate(
+    config["credentials"],
+    config["cookie"]["name"],
+    config["cookie"]["key"],
+    config["cookie"]["expiry_days"],
+)
+
+name, authentication_status, username = authenticator.login("Logga in", "sidebar")
+
+if authentication_status == False:
+    st.error("Fel användarnamn eller lösenord")
+if authentication_status == None:
+    st.warning("Vänligen logga in för att använda alla funktioner")
+
+st.set_page_config(page_title="Investeringsrummet", layout="wide")
 
 # ------------------------
 # Hero Section
 # ------------------------
 st.markdown("""
     <div style='text-align: center; padding-top: 30px;'>
-        <h1 style='font-size: 3em;'>📈 Ditt smarta verktyg för att analysera aktier som ett proffs</h1>
+        <h1 style='font-size: 3em;'>📈 Investeringsrummet</h1>
         <p style='font-size: 1.2em;'>Datadrivna aktievärderingar med hjälp av Multipel- och DCF-modeller</p>
         <a href='#start-cta'>
             <button style='font-size: 1.1em; padding: 10px 25px; background-color: #0072E3; color: white; border: none; border-radius: 5px;'>🚀 Starta din första analys</button>
@@ -39,7 +59,7 @@ with col3:
     st.markdown("""
     - 🔒 Din data är din  
     - 🔍 Transparens i datakällor  
-    - 🧑‍💻 Byggd med Streamlit och öppen kodbas
+    - 🧑‍💻 Byggd med Streamlit
     """)
 
 # ------------------------
@@ -110,5 +130,10 @@ st.markdown("""
   Få en översikt över dina egna innehav och analysera dem visuellt och historiskt.
 """)
 
+if authentication_status:
+    st.markdown("- 📈 **Värderingskalkylator**  *(Premium)*  \n  Tillgång till DCF och multipelmodeller med egna antaganden.")
+else:
+    st.markdown("- 🔒 **Värderingskalkylator** *(Premium)*  \n  Logga in för att få tillgång till DCF och multipelmodeller.")
+
 st.markdown("---")
-st.markdown("🛠️ **Övriga verktyg på sidan är gratis att använda!** Endast `1_Värderingskalkylator` kräver premiumkonto.")
+st.markdown("🛠️ **Alla verktyg utom värderingskalkylatorn är gratis att använda!** Logga in för att låsa upp premiumfunktioner.")
