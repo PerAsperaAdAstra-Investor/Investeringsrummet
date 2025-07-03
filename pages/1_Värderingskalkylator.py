@@ -7,27 +7,26 @@ import plotly.graph_objects as go
 from utils.name_to_ticker import name_to_ticker
 from forex_python.converter import CurrencyRates
 #from yahooquery import Ticker as YQ_Ticker
+from firebase_config import auth
 
-# ==================== AUTHENTICATION ====================
-from streamlit_authenticator import Authenticate
-import yaml
-from yaml.loader import SafeLoader
+# Inloggning med Pyrebase
+if "user" not in st.session_state:
+    st.session_state.user = None
 
-with open('./config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
+if not st.session_state.user:
+    with st.form("login"):
+        email = st.text_input("Email")
+        password = st.text_input("Lösenord", type="password")
+        submit = st.form_submit_button("Logga in")
 
-authenticator = Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['preauthorized']
-)
-
-name, authentication_status, username = authenticator.login(location="main", form_name="Logga in")
-# Säkerställ att endast inloggade användare kommer åt sidan
-if st.session_state["authentication_status"] != True:
-    st.warning("Du måste vara inloggad för att använda värderingskalkylatorn.")
+        if submit:
+            try:
+                user = auth.sign_in_with_email_and_password(email, password)
+                st.session_state.user = user
+                st.success("Inloggad!")
+                st.experimental_rerun()
+            except:
+                st.error("Fel email eller lösenord.")
     st.stop()
 
 # =============================================================================

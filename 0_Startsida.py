@@ -1,14 +1,33 @@
+import yaml
+import os
+from stripe_config import create_checkout_session
+
+# Ladda config.yaml
+config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+with open(config_path) as file:
+    config = yaml.safe_load(file)
 import streamlit as st
 from PIL import Image
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
 from datetime import datetime, timedelta
 
 import streamlit as st
 from firebase_config import auth
 
-st.title("Investeringsrummet 🔐")
+
+st.set_page_config(page_title="Investeringsrummet", layout="wide")
+
+st.image("Assets/test.png", width=80)
+
+
+# ------------------------
+# Hero Section
+# ------------------------
+st.markdown("""
+    <div style='text-align: center; padding-top: 30px;'>
+        <h1 style='font-size: 3em;'>📈 Investeringsrummet</h1>
+        <p style='font-size: 1.2em;'>Datadrivna aktievärderingar med hjälp av Multipel- och DCF-modeller</p>
+""", unsafe_allow_html=True)
+
 
 choice = st.radio("Login eller Registrera", ["Login", "Registrera"])
 
@@ -32,43 +51,6 @@ elif choice == "Login":
             st.session_state["account_type"] = "free"
         except Exception as e:
             st.error(f"Fel vid inloggning: {e}")
-
-
-
-
-
-with open("config.yaml") as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-authenticator = stauth.Authenticate(
-    config["credentials"],
-    config["cookie"]["name"],
-    config["cookie"]["key"],
-    config["cookie"]["expiry_days"],
-)
-
-
-
-st.set_page_config(page_title="Investeringsrummet", layout="wide")
-
-st.image("Assets/test.png", width=80)
-
-
-# ------------------------
-# Hero Section
-# ------------------------
-st.markdown("""
-    <div style='text-align: center; padding-top: 30px;'>
-        <h1 style='font-size: 3em;'>📈 Investeringsrummet</h1>
-        <p style='font-size: 1.2em;'>Datadrivna aktievärderingar med hjälp av Multipel- och DCF-modeller</p>
-""", unsafe_allow_html=True)
-# Lägg till möjlighet till registrering
-try:
-    if authenticator.register_user('Registrera konto', location='main', preauthorization=False):
-        st.success("Användare registrerad! Logga in med dina nya uppgifter.")
-except Exception as e:
-    st.error(e)
-
 
 # Hantera inloggningstillstånd via session_state
 if 'user_logged_in' not in st.session_state:
@@ -99,6 +81,12 @@ else:
 st.markdown("""
     </div>
 """, unsafe_allow_html=True)
+
+if st.session_state.get("account_type") == "free":
+    st.info("Du använder Gratismodellen – uppgradera för mer funktioner 🚀")
+    if st.button("💳 Uppgradera till Premium"):
+        checkout_url = create_checkout_session(st.session_state["user_email"])
+        st.markdown(f"[👉 Klicka här för att betala via Stripe]({checkout_url})", unsafe_allow_html=True)
 
 st.markdown("---")
 
