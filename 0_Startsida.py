@@ -196,3 +196,4 @@ st.markdown("testhhbhbhbhbhbhbhbhbhb.")
 st.markdown("---")
 
 st.markdown("🛠️ **Alla verktyg utom värderingskalkylatorn är gratis att använda!** Logga in för att låsa upp premiumfunktioner.")
+st.write("Vi jämför bolagets nyckeltal (P/E, EV/EBITDA m.fl.) mot branschsnitt för att uppskatta ett rimligt värde.")
