@@ -1,14 +1,15 @@
 from dotenv import load_dotenv
-load_dotenv()
+import os
+if os.getenv("FLASK_ENV") != "production":
+    load_dotenv()
 
 import stripe
 from flask import Flask, request, jsonify
-import os
 
 app = Flask(__name__)
 
 # Din Stripe webhook secret (hämta från Stripe Dashboard)
-endpoint_secret = os.getenv("STRIPE_ENDPOINT_SECRET")
+endpoint_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # Sätt din Stripe API-nyckel
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
