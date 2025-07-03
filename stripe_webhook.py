@@ -1,13 +1,17 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import stripe
 from flask import Flask, request, jsonify
+import os
 
 app = Flask(__name__)
 
 # Din Stripe webhook secret (hämta från Stripe Dashboard)
-endpoint_secret = "whsec_XXXXX"
+endpoint_secret = os.getenv("STRIPE_ENDPOINT_SECRET")
 
 # Sätt din Stripe API-nyckel
-stripe.api_key = "***REMOVED***ubsH6Q9qX3CK0Fex69CJUUfID2fYcw48M6W2QBhASxnDpOkIGfTnVu7zozyizV0x0U1bwU7vX9MdlUa8E00teSbfDDG"
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 @app.route("/stripe_webhook", methods=["POST"])
 def stripe_webhook():
