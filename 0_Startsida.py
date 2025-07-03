@@ -1,4 +1,4 @@
-from stripe_config import create_checkout_session
+from stripe_utils import create_checkout_session
 import streamlit as st
 from PIL import Image
 from datetime import datetime, timedelta

@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import os
+
 if os.getenv("FLASK_ENV") != "production":
     load_dotenv()
 
@@ -7,6 +8,10 @@ import stripe
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Stripe Webhook Server is running!"
 
 # Din Stripe webhook secret (hämta från Stripe Dashboard)
 endpoint_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
@@ -33,3 +38,5 @@ def stripe_webhook():
         print(f"Premium-användare: {customer_email}")
 
     return jsonify(success=True)
+
+
