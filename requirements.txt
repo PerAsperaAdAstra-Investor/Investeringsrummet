@@ -11,5 +11,5 @@ setuptools
 requests==2.28.1
 stripe
 flask
-gunicornpython
-dotenv==0.21.1
+gunicorn
+python-dotenv==0.21.1
