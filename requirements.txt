@@ -1,5 +1,12 @@
+
 streamlit
+streamlit-authenticator==0.4.2
 yfinance
 matplotlib
+plotly
 pandas
 forex-python
+yaml
+pyrebase4
+python-decouple
+requests
