@@ -188,12 +188,23 @@ else:
     st.markdown("- 🔒 **Värderingskalkylator** *(Premium)*  \n  Logga in för att få tillgång till DCF och multipelmodeller.")
 
 st.markdown("---")
-# Lägg till metataggen i HTML
-st.markdown("""
-    <meta name="google-site-verification" content="ca-pub-2743929577264944">
-""", unsafe_allow_html=True)
+
 st.markdown("testhhbhbhbhbhbhbhbhbhb.")
 st.markdown("---")
 
 st.markdown("🛠️ **Alla verktyg utom värderingskalkylatorn är gratis att använda!** Logga in för att låsa upp premiumfunktioner.")
 st.write("Vi jämför bolagets nyckeltal (P/E, EV/EBITDA m.fl.) mot branschsnitt för att uppskatta ett rimligt värde.")
+
+import os
+from flask import Flask, send_from_directory
+from streamlit.web.server import Server
+
+
+def register_ads_txt_route():
+    app = Server.get_current()._app
+    flask_app: Flask = app
+
+    @flask_app.route("/ads.txt")
+    def ads_txt():
+        return send_from_directory("static", "ads.txt")
+register_ads_txt_route()
