@@ -13,3 +13,5 @@ stripe
 flask
 gunicorn
 python-dotenv==0.21.1
+PyPDF2
+openai

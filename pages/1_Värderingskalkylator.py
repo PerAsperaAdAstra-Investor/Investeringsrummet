@@ -9,24 +9,9 @@ from forex_python.converter import CurrencyRates
 #from yahooquery import Ticker as YQ_Ticker
 from firebase_config import auth
 
-# Inloggning med Pyrebase
-if "user" not in st.session_state:
-    st.session_state.user = None
-
-if not st.session_state.user:
-    with st.form("login"):
-        email = st.text_input("Email")
-        password = st.text_input("Lösenord", type="password")
-        submit = st.form_submit_button("Logga in")
-
-        if submit:
-            try:
-                user = auth.sign_in_with_email_and_password(email, password)
-                st.session_state.user = user
-                st.success("Inloggad!")
-                st.experimental_rerun()
-            except:
-                st.error("Fel email eller lösenord.")
+# Kolla om användaren är inloggad, annars stoppa
+if "user" not in st.session_state or not st.session_state.user:
+    st.warning("Du måste vara inloggad för att använda värderingskalkylatorn.")
     st.stop()
 
 # =============================================================================

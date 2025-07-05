@@ -7,9 +7,9 @@ from utils.ibindex_mock import MOCK_DATA
 # 📊 INVESTMENTBOLAGSPORTFÖLJ
 # ==============================================================================
 
-st.title("Investmentbolagsportfölj")
+st.title("Simulator av investmentbolags-portfölj")
 
-st.write("Ange andel (%) av varje investmentbolag i din portfölj:")
+st.write("Ange andel i (%) av varje investmentbolag för se viktningen av alla underliggande tillgångar:")
 
 user_weights = {}
 total_sum = 0
