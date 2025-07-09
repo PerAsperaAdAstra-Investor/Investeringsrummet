@@ -9,10 +9,7 @@ from forex_python.converter import CurrencyRates
 #from yahooquery import Ticker as YQ_Ticker
 from firebase_config import auth
 
-# Kolla om användaren är inloggad, annars stoppa
-if "user" not in st.session_state or not st.session_state.user:
-    st.warning("Du måste vara inloggad för att använda värderingskalkylatorn.")
-    st.stop()
+
 
 # =============================================================================
 # 📊 VÄRDERINGSKALKYLATOR
@@ -45,16 +42,17 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-# Skapa sökbar lista med format "Investor (INVE-B.ST)"
 user_input = st.text_input("🔍 Sök bolag eller ticker")
-if user_input.upper() in name_to_ticker.values():
-    ticker = user_input.upper()
-else:
-    matches = [t for n, t in name_to_ticker.items() if user_input.lower() in n.lower()]
-    if matches:
-        ticker = matches[0]
-    else:
+ticker = None
+if user_input:
+    if user_input.upper() in name_to_ticker.values():
         ticker = user_input.upper()
+    else:
+        matches = [t for n, t in name_to_ticker.items() if user_input.lower() in n.lower()]
+        if matches:
+            ticker = matches[0]
+        else:
+            ticker = user_input.upper()  # Fungerar även om det inte finns i din name_to_ticker
 if ticker:
     stock = yf.Ticker(ticker)
     #yq_ticker = YQ_Ticker(ticker)

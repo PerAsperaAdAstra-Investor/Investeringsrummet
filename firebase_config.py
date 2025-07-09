@@ -1,14 +1,14 @@
-
+from decouple import config
 import pyrebase
 firebaseConfig = {
-  "apiKey": "AIzaSyCT1L6iQoWnC6k9gdWvse_apYRBozp1zHA",
-  "authDomain": "investeringsrummet-3fe42.firebaseapp.com",
-  "projectId": "investeringsrummet-3fe42",
-  "storageBucket": "investeringsrummet-3fe42.appspot.com",
-  "databaseURL": "https://investeringsrummet-3fe42.firebaseio.com",
-  "messagingSenderId": "478793442960",
-  "appId": "1:478793442960:web:cafc4c6d22dbbf60ff5a15",
-  "measurementId": "G-KF8X5TFSQ4"
+    "apiKey": config("FIREBASE_API_KEY"),
+    "authDomain": config("FIREBASE_AUTH_DOMAIN"),
+    "projectId": config("FIREBASE_PROJECT_ID"),
+    "storageBucket": config("FIREBASE_STORAGE_BUCKET"),
+    "databaseURL": config("FIREBASE_DATABASE_URL"),
+    "messagingSenderId": config("FIREBASE_MESSAGING_SENDER_ID"),
+    "appId": config("FIREBASE_APP_ID"),
+    "measurementId": config("FIREBASE_MEASUREMENT_ID")
 }
 
 
